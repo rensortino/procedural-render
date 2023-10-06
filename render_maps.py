@@ -2,6 +2,14 @@ import bpy
 from pathlib import Path
 from math import radians
 import time
+import sys
+
+
+argv = sys.argv
+argv = argv[argv.index("--") + 1:]  # get all args after "--"
+slice_idx = int(argv[0])
+env_light_dir_name = argv[1]
+material_dir_name = argv[2]
 
 
 def create_material_once(name):
@@ -40,19 +48,20 @@ def load_hdri_image(img_path, name):
     image.name = name
     return image
     
-def set_ambient_light(image):
+def set_env_light(image):
     bpy.data.worlds['World'].node_tree.nodes["Environment Texture"].image = image
     
     
 
-ambient_light_paths = [
+env_light_paths = [
     "abandoned_bakery_4k.exr",
     "burnt_warehouse_4k.exr",
     "je_gray_02_4k.exr",
     "rural_asphalt_road_4k.exr",
     "studio_small_02_4k.exr",
 ]
-ambient_light_dir = Path("/home/rsortino/Downloads/DeepMaterialsData/Data_Deschaintre18/ambient_lights")
+# env_light_dir = Path("/home/rsortino/Downloads/DeepMaterialsData/Data_Deschaintre18/env_lights")
+env_light_dir = Path(env_light_dir_name)
 
 bpy.context.scene.render.image_settings.file_format = "PNG"
 
@@ -67,7 +76,8 @@ bsdf_node = nodes.get("Specular BSDF")
 
 start = time.time()
 
-maps_folder = Path("/home/rsortino/Downloads/DeepMaterialsData/Data_Deschaintre18/train")
+# maps_folder = Path("/home/rsortino/Downloads/DeepMaterialsData/Data_Deschaintre18/train")
+maps_folder = Path(material_dir_name)
 #maps_folder = Path("/home/rsortino/sample")
 for i, material_folder in enumerate(maps_folder.iterdir()):
     
@@ -111,13 +121,13 @@ for i, material_folder in enumerate(maps_folder.iterdir()):
     # Render the image
     
     
-    for amb_path in ambient_light_paths:
-        amb_light_name = amb_path.split(".")[0]
-        amb_light = load_hdri_image(ambient_light_dir / amb_path, amb_light_name)
-        set_ambient_light(amb_light)
+    for env_path in env_light_paths:
+        env_light_name = env_path.split(".")[0]
+        env_light = load_hdri_image(env_light_dir / env_path, env_light_name)
+        set_env_light(env_light)
         
         for rotation_angle in [0, 90, 180, 270]:
-            dst_path = f'{material_folder}/render/{amb_light_name}_rot{rotation_angle}'
+            dst_path = f'{material_folder}/render/{env_light_name}_rot{rotation_angle}'
             if Path(dst_path).with_suffix(".png").exists():
                 print(f"Existing {dst_path}")
                 continue
