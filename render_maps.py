@@ -10,6 +10,9 @@ argv = argv[argv.index("--") + 1:]  # get all args after "--"
 slice_idx = int(argv[0])
 env_light_dir_name = argv[1]
 material_dir_name = argv[2]
+slice_size = 1000
+
+
 
 
 def create_material_once(name):
@@ -77,10 +80,15 @@ bsdf_node = nodes.get("Specular BSDF")
 start = time.time()
 
 # maps_folder = Path("/home/rsortino/Downloads/DeepMaterialsData/Data_Deschaintre18/train")
-maps_folder = Path(material_dir_name)
-#maps_folder = Path("/home/rsortino/sample")
-for i, material_folder in enumerate(maps_folder.iterdir()):
-    
+material_folders = sorted(list(Path(material_dir_name).iterdir()))
+slice_start = slice_idx * slice_size
+slice_end = slice_start + slice_size
+material_folders = material_folders[slice_start : slice_end]
+
+for material_folder in material_folders:
+
+    print(material_folder)
+
     if (material_folder / "render").exists():
         if len(list((material_folder / "render").iterdir())) == 20:
             print("Material already rendered, skipping")
@@ -122,6 +130,7 @@ for i, material_folder in enumerate(maps_folder.iterdir()):
     
     
     for env_path in env_light_paths:
+        assert Path(env_light_dir / env_path).exists(), f"Environment light path {env_light_dir / env_path} does not exist"
         env_light_name = env_path.split(".")[0]
         env_light = load_hdri_image(env_light_dir / env_path, env_light_name)
         set_env_light(env_light)
@@ -134,5 +143,4 @@ for i, material_folder in enumerate(maps_folder.iterdir()):
             bpy.data.worlds['World'].node_tree.nodes["Mapping"].inputs[2].default_value[2] = radians(rotation_angle)
             bpy.context.scene.render.filepath = dst_path
             bpy.ops.render.render(animation=False, write_still=True)
-        
 print("Elapsed Time: ", time.time() - start)
